@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NjiaFedha</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg:#060d1a; --surface:#0b1526; --card:#0f1e35; --card2:#152540; --border:#1e3557;
+  --text:#e8f0fe; --muted:#6b87aa;
+  --emerald:#10f0a0; --teal:#00e5ff; --blue:#3d8bff; --indigo:#818cf8;
+  --amber:#fbbf24; --danger:#f43f5e; --radius:14px;
+}
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh; font-size:14px; overscroll-behavior:none; }
+.app { display:flex; flex-direction:column; min-height:100vh; }
+.header { background:var(--surface); border-bottom:1px solid var(--border); padding:0.85rem 1rem;
+  display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.logo-title { font-size:17px; font-weight:800;
+  background:linear-gradient(135deg,var(--emerald),var(--teal));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logo-sub { font-size:10px; color:var(--muted); }
+.avatar { width:32px; height:32px; border-radius:50%;
+  background:linear-gradient(135deg,var(--emerald),var(--teal));
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#060d1a; }
+.sync-dot { width:8px; height:8px; border-radius:50%; background:var(--emerald); box-shadow:0 0 6px var(--emerald); }
+.sync-dot.syncing { background:var(--amber); box-shadow:0 0 6px var(--amber); }
+.sync-dot.error { background:var(--danger); box-shadow:0 0 6px var(--danger); }
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface);
+  border-top:1px solid var(--border); display:flex; overflow-x:auto;
+  padding:5px 0 calc(5px + env(safe-area-inset-bottom)) 0; }
+.bn-item { display:flex; flex-direction:column; align-items:center; gap:2px;
+  flex:0 0 auto; min-width:58px; padding:5px 4px; color:var(--muted); font-size:9px; cursor:pointer; }
+.bn-item i { font-size:19px; }
+.bn-item.active { color:var(--teal); }
+.content { flex:1; padding:1rem; padding-bottom:6rem; }
+.page { display:none; } .page.active { display:block; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1rem; position:relative; overflow:hidden; margin-bottom:12px; }
+.card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--teal),var(--blue)); opacity:0.35; }
+.card-lg { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1rem; margin-bottom:12px; }
+.card-title { font-size:10.5px; color:var(--muted); font-weight:500; margin-bottom:4px;
+  text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px; }
+.card-value { font-size:21px; font-weight:800; word-break:break-word; }
+.card-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.section-title { font-size:14px; font-weight:700; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between; color:var(--text); }
+.section-divider { font-size:10px; color:var(--muted); font-weight:600; letter-spacing:1px;
+  text-transform:uppercase; margin:14px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+label { font-size:11px; color:var(--muted); font-weight:500; }
+input, select { background:var(--card2); border:1px solid var(--border); border-radius:8px;
+  padding:9px 10px; color:var(--text); font-size:13px; outline:none; width:100%; font-family:inherit; }
+input:focus, select:focus { border-color:var(--teal); box-shadow:0 0 0 2px rgba(0,229,255,0.1); }
+select option { background:var(--card2); }
+.btn { padding:10px 16px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:600;
+  border:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; }
+.btn-primary { background:linear-gradient(135deg,var(--emerald),var(--teal)); color:#060d1a;
+  box-shadow:0 0 14px rgba(0,229,255,0.2); width:100%; }
+.btn-primary:active { transform:scale(0.97); }
+.btn-primary:disabled { opacity:0.5; }
+.btn-text { background:none; border:none; color:var(--teal); font-size:12px; cursor:pointer; text-decoration:underline; }
+.badge { display:inline-flex; align-items:center; gap:3px; font-size:10px;
+  padding:2px 6px; border-radius:5px; font-weight:500; }
+.badge-green { background:rgba(16,240,160,0.12); color:var(--emerald); }
+.badge-teal  { background:rgba(0,229,255,0.12);  color:var(--teal); }
+.badge-red   { background:rgba(244,63,94,0.12);  color:#f43f5e; }
+.badge-amber { background:rgba(251,191,36,0.12); color:var(--amber); }
+.progress-bar { height:7px; background:var(--card2); border-radius:99px; overflow:hidden; margin:6px 0 3px; }
+.progress-fill { height:100%; border-radius:99px; transition:width 0.4s; }
+.flag { display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+  border-radius:10px; margin-bottom:8px; font-size:12.5px; line-height:1.6; }
+.flag.red   { background:rgba(244,63,94,0.08);  border:1px solid rgba(244,63,94,0.2);  color:#fca5a5; }
+.flag.amber { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); color:#fde68a; }
+.flag.green { background:rgba(16,240,160,0.08); border:1px solid rgba(16,240,160,0.2); color:#6ee7b7; }
+.flag.blue  { background:rgba(61,139,255,0.08); border:1px solid rgba(61,139,255,0.2); color:#93c5fd; }
+.flag i { font-size:15px; flex-shrink:0; margin-top:2px; }
+.budget-row { display:flex; align-items:center; gap:10px; padding:9px 0;
+  border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.budget-label { font-size:12px; flex:1; min-width:100px; }
+.budget-bar-wrap { flex:1; min-width:80px; height:6px; background:var(--card2); border-radius:99px; overflow:hidden; }
+.budget-fill-bar { height:100%; border-radius:99px; }
+.budget-vals { font-size:11px; color:var(--muted); text-align:right; min-width:130px; flex-shrink:0; }
+.tithe-bar { display:flex; align-items:center; justify-content:space-between;
+  gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+.chart-wrap { position:relative; width:100%; }
+.del-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; padding:4px; }
+.del-btn:active { color:var(--danger); }
+.clear-btn { background:rgba(244,63,94,0.08); color:#f43f5e; border:1px solid rgba(244,63,94,0.2);
+  border-radius:7px; padding:4px 9px; font-size:11px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:4px; }
+.toast { position:fixed; bottom:75px; left:50%; transform:translateX(-50%) translateY(10px);
+  background:var(--card); border:1px solid var(--teal); border-radius:10px; padding:10px 16px;
+  color:var(--teal); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px;
+  z-index:9999; opacity:0; transition:all 0.3s; pointer-events:none; max-width:90vw; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.error { border-color:var(--danger); color:var(--danger); }
+.empty-state { text-align:center; padding:2rem 1rem; color:var(--muted); font-size:12px; }
+.empty-state i { font-size:30px; display:block; margin-bottom:8px; color:#4a7db5; }
+.month-tabs { display:flex; gap:4px; overflow-x:auto; margin-bottom:12px; padding-bottom:2px; }
+.month-tab { padding:6px 12px; border-radius:99px; font-size:11px; font-weight:500; cursor:pointer;
+  border:1px solid var(--border); color:var(--muted); white-space:nowrap; flex-shrink:0; }
+.month-tab.active { background:rgba(0,229,255,0.1); border-color:var(--teal); color:var(--teal); }
+.alloc-banner { display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+  background:rgba(16,240,160,0.05); border:1px solid rgba(16,240,160,0.15);
+  border-radius:10px; margin-bottom:12px; font-size:12px; color:var(--muted); line-height:1.7; }
+.alloc-banner i { color:var(--emerald); font-size:18px; flex-shrink:0; }
+.cat-p { padding:8px 4px; border-radius:9px; background:var(--card2); border:1.5px solid var(--border);
+  font-size:11px; font-weight:500; color:var(--muted); cursor:pointer; text-align:center; line-height:1.3; }
+.cat-p.sel { border-color:var(--teal); color:var(--teal); background:rgba(0,229,255,0.08); }
+.cat-p.sel-danger { border-color:var(--danger); color:var(--danger); background:rgba(244,63,94,0.08); }
+.h-choice { padding:9px 12px; border-radius:8px; background:var(--card2);
+  border:1.5px solid var(--border); font-size:12px; color:var(--muted); cursor:pointer; margin-bottom:6px; }
+.h-choice.sel { border-color:var(--danger); color:var(--danger); background:rgba(244,63,94,0.08); }
+
+/* AUTH SCREEN */
+.auth-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
+.auth-box { width:100%; max-width:380px; }
+.auth-logo { text-align:center; margin-bottom:2rem; }
+.auth-logo .logo-title { font-size:28px; }
+.auth-logo .logo-sub { font-size:12px; margin-top:6px; }
+.auth-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; }
+.auth-tabs { display:flex; gap:4px; background:var(--card2); padding:4px; border-radius:10px; margin-bottom:1.25rem; }
+.auth-tab { flex:1; padding:9px; text-align:center; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--muted); }
+.auth-tab.active { background:var(--card); color:var(--teal); }
+.auth-error { padding:10px 12px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.2);
+  border-radius:8px; color:#fca5a5; font-size:12px; margin-bottom:12px; display:none; }
+.auth-error.show { display:block; }
+.loading-wrap { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; }
+.spinner { width:32px; height:32px; border:3px solid var(--card2); border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div class="loading-wrap" id="loading-screen">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:13px">Connecting to NjiaFedha...</div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div class="auth-wrap" id="auth-screen" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-title">NjiaFedha</div>
+      <div class="logo-sub" style="color:var(--muted)">Your financial journey, synced everywhere</div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Log In</div>
+        <div class="auth-tab" id="tab-signup" onclick="setAuthMode('signup')">Sign Up</div>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="At least 6 characters">
+      </div>
+      <button class="btn btn-primary" id="auth-submit-btn" onclick="handleAuth()">
+        <i class="ti ti-login"></i> <span id="auth-btn-text">Log In</span>
+      </button>
+      <div style="text-align:center;margin-top:14px" id="auth-switch-msg">
+        <span style="font-size:12px;color:var(--muted)">Don't have an account? </span>
+        <button class="btn-text" onclick="setAuthMode('signup')">Sign up</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="main-app" style="display:none">
+
+  <div class="header">
+    <div>
+      <div class="logo-title">NjiaFedha</div>
+      <div class="logo-sub" id="header-sub">Phase 2 · Synced</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="badge badge-teal" id="phase-badge" style="display:none"><i class="ti ti-flame"></i> Day 1</div>
+      <div class="sync-dot" id="sync-dot" title="Synced"></div>
+      <div class="avatar" id="user-avatar" onclick="toggleUserMenu()" style="cursor:pointer">JK</div>
+    </div>
+  </div>
+
+  <!-- User menu dropdown -->
+  <div id="user-menu" style="display:none;position:fixed;top:56px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;z-index:200;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+    <div style="padding:8px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:6px" id="user-email-display"></div>
+    <div onclick="handleLogout()" style="padding:8px 10px;font-size:13px;color:var(--danger);cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-logout"></i> Log Out</div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ PHASE 1: PROGRESS PAGE (appended below capture form during Phase 1) ══ -->
+    <div class="page" id="page-phase1-progress">
+      <div class="streak-box" style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:rgba(16,240,160,0.05);border:1px solid rgba(16,240,160,0.15);border-radius:12px;margin-bottom:12px">
+        <div style="font-size:32px;font-weight:800;color:var(--emerald);line-height:1" id="p1-streak-num">0</div>
+        <div>
+          <strong style="font-size:13px;color:var(--text);display:block" id="p1-streak-title">Start your streak today</strong>
+          <span style="font-size:11px;color:var(--muted)" id="p1-streak-sub">Log every transaction the moment it happens</span>
+        </div>
+      </div>
+      <div class="alloc-banner">
+        <i class="ti ti-info-circle"></i>
+        <div><strong style="color:var(--teal)">Phase 1 — 30 active logging days.</strong> Log every transaction honestly. The full dashboard, budget, and financial tools unlock once you've logged on 30 different days.</div>
+      </div>
+      <div class="card-lg">
+        <div class="section-title" style="margin-bottom:6px">Your 30-Day Journey</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+          <span>Day 1</span><span id="p1-pct" style="color:var(--teal);font-weight:600">0%</span><span>Day 30</span>
+        </div>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" id="p1-bar" style="background:linear-gradient(90deg,var(--emerald),var(--teal))"></div></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:12px" id="p1-day-dots"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-title"><i class="ti ti-cash"></i> Total In</div><div class="card-value" style="color:var(--emerald)" id="p1-in">KES 0</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-receipt"></i> Total Out</div><div class="card-value" style="color:var(--danger)" id="p1-out">KES 0</div></div>
+      </div>
+      <div class="card-lg">
+        <div class="section-title">History</div>
+        <div id="p1-today-list"><div class="empty-state" style="padding:1.5rem"><i class="ti ti-bolt"></i>No transactions today yet.</div></div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 2 LOCKED SCREEN (shown for locked nav items) ══ -->
+    <div class="page" id="page-locked">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;text-align:center;padding:2rem">
+        <div style="width:70px;height:70px;border-radius:50%;background:rgba(0,229,255,0.08);border:2px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem">
+          <i class="ti ti-lock" style="font-size:32px;color:var(--teal)"></i>
+        </div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px">Locked Until Day 31</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;max-width:320px">
+          This unlocks after <strong style="color:var(--text)">30 active logging days</strong>.<br><br>
+          You've logged on <strong style="color:var(--teal)" id="locked-days-done">0 days</strong>.<br>
+          <strong style="color:var(--emerald)" id="locked-days-left">30 days</strong> remaining.
+        </div>
+        <button onclick="nav('phase1')" style="margin-top:1.5rem;padding:12px 24px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--emerald),var(--teal));color:#060d1a;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-bolt"></i> Go Log a Transaction
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 2 UNLOCK CELEBRATION (shown once) ══ -->
+    <div class="page" id="page-unlock-celebration">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:2rem">
+        <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--emerald),var(--teal));display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;box-shadow:0 0 40px rgba(0,229,255,0.4)">
+          <i class="ti ti-confetti" style="font-size:42px;color:#060d1a"></i>
+        </div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:10px;background:linear-gradient(135deg,var(--emerald),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent">30 Days Complete</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;max-width:340px;margin-bottom:1.5rem">
+          You logged every transaction honestly for 30 days. That data just built your personalized budget — calibrated to how <em>you</em> actually spend, not a generic template.
+        </div>
+        <button onclick="enterPhase2()" style="padding:14px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--emerald),var(--teal));color:#060d1a;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 0 20px rgba(0,229,255,0.3)">
+          <i class="ti ti-arrow-right"></i> Enter Your Dashboard
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 2: DASHBOARD ══ -->
+    <div class="page" id="page-dashboard">
+      <div class="section-divider">Your Financial Reality</div>
+      <div class="alloc-banner">
+        <i class="ti ti-cloud-check"></i>
+        <div>Synced to your account via Supabase — accessible from any device where you log in.</div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-title"><i class="ti ti-cash"></i> Monthly Salary</div><div class="card-value" style="color:var(--emerald)" id="d-salary">KES 0</div><div class="card-sub" id="d-sal-sub">Set in Budget tab</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-wallet"></i> Balance</div><div class="card-value" style="color:var(--teal)" id="d-balance">KES 0</div><div class="card-sub">Income − Expenses</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-receipt"></i> Total Spent</div><div class="card-value" style="color:var(--danger)" id="d-spent">KES 0</div><div class="card-sub" id="d-spent-pct">0% of salary</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-heart"></i> Tithe Due</div><div class="card-value" style="color:var(--amber)" id="d-tithe">KES 0</div><div class="card-sub">10% of income</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-credit-card"></i> Loan Balance</div><div class="card-value" style="color:var(--danger)" id="d-loan">KES 0</div><div class="card-sub">Total outstanding debt</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-chart-pie"></i> Net Worth</div><div class="card-value" style="color:var(--blue)" id="d-networth">KES 0</div><div class="card-sub">Balance + Inv − Debt</div></div>
+      </div>
+
+      <div class="card-lg">
+        <div class="section-title">Financial Health Score</div>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div style="position:relative;width:86px;height:86px;flex-shrink:0">
+            <svg width="86" height="86" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#152540" stroke-width="10"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="url(#sg)" stroke-width="10"
+                stroke-dasharray="251.2" id="health-arc" stroke-dashoffset="251.2"
+                stroke-linecap="round" transform="rotate(-90 50 50)"/>
+              <defs><linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#10f0a0"/><stop offset="100%" stop-color="#00e5ff"/>
+              </linearGradient></defs>
+            </svg>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+              <div style="font-size:20px;font-weight:800;color:var(--teal)" id="health-score">0</div>
+              <div style="font-size:9px;color:var(--muted)">/ 100</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>Savings Rate</span><span id="hs-sr" style="color:var(--emerald)">0%</span></div><div class="progress-bar"><div class="progress-fill" id="hs-sr-bar" style="background:linear-gradient(90deg,var(--emerald),var(--teal))"></div></div></div>
+            <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>Emergency Fund</span><span id="hs-em" style="color:var(--indigo)">0%</span></div><div class="progress-bar"><div class="progress-fill" id="hs-em-bar" style="background:linear-gradient(90deg,var(--blue),var(--indigo))"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>Debt Load</span><span id="hs-debt" style="color:var(--amber)">0%</span></div><div class="progress-bar"><div class="progress-fill" id="hs-debt-bar" style="background:var(--amber)"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-lg"><div class="section-title">Spending Breakdown</div><div class="chart-wrap" style="height:200px"><canvas id="spendChart"></canvas></div></div>
+      <div class="card-lg"><div class="section-title">Financial Coach <span class="badge badge-teal">Live</span></div><div id="dash-insights"><div class="empty-state"><i class="ti ti-bulb"></i>Set your salary in Budget to activate.</div></div></div>
+    </div>
+
+    <div class="page" id="page-capture">
+      <div class="section-title">Log Transaction</div>
+      <div style="display:flex;gap:4px;background:var(--card2);padding:4px;border-radius:10px;margin-bottom:12px;border:1px solid var(--border)">
+        <div id="ctab-out" onclick="setCDir('out')" style="flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:rgba(244,63,94,0.1);color:var(--danger);border:1px solid rgba(244,63,94,0.3)"><i class="ti ti-arrow-up-circle"></i> Money Out</div>
+        <div id="ctab-in" onclick="setCDir('in')" style="flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)"><i class="ti ti-arrow-down-circle"></i> Money In</div>
+      </div>
+      <div class="form-group">
+        <label>Amount (KES)</label>
+        <input type="number" inputmode="decimal" id="c-amount" placeholder="0" style="font-size:28px;font-weight:800;text-align:center;padding:12px">
+      </div>
+      <div id="c-cats-out">
+        <label style="display:block;margin-bottom:6px">Category</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+          <div class="cat-p" onclick="selectCat(this,'Food &amp; Drink')">🍽️ Food</div>
+          <div class="cat-p" onclick="selectCat(this,'Transport')">🚗 Transport</div>
+          <div class="cat-p" onclick="selectCat(this,'Housing/Rent')">🏠 Rent</div>
+          <div class="cat-p helping-cat" onclick="selectCat(this,'Helping People')">🤝 Helping</div>
+          <div class="cat-p helping-cat" onclick="selectCat(this,'Family Support')">👨‍👩‍👧 Family</div>
+          <div class="cat-p" onclick="selectCat(this,'Tithe')">⛪ Tithe</div>
+          <div class="cat-p" onclick="selectCat(this,'Offering')">🙏 Offering</div>
+          <div class="cat-p" onclick="selectCat(this,'Shopping')">🛍️ Shopping</div>
+          <div class="cat-p" onclick="selectCat(this,'Airtime/Data')">📱 Airtime</div>
+          <div class="cat-p" onclick="selectCat(this,'Loan Payment')">🏦 Loan</div>
+          <div class="cat-p" onclick="selectCat(this,'Kenya Power')">⚡ KPower</div>
+          <div class="cat-p" onclick="selectCat(this,'Water Bill')">💧 Water</div>
+          <div class="cat-p" onclick="selectCat(this,'Barber/Grooming')">✂️ Grooming</div>
+          <div class="cat-p" onclick="selectCat(this,'Business Investment')">📈 Business</div>
+          <div class="cat-p" onclick="selectCat(this,'Savings/Investment')">💰 Savings</div>
+          <div class="cat-p" onclick="selectCat(this,'Church/Fellowship')">⛪ Church</div>
+          <div class="cat-p" onclick="selectCat(this,'Food Treats')">🍟 Treats</div>
+          <div class="cat-p" onclick="selectCat(this,'Service Fee')">🧾 Service</div>
+          <div class="cat-p" onclick="selectCat(this,'Medical')">💊 Medical</div>
+          <div class="cat-p" onclick="selectCat(this,'Entertainment')">🎬 Fun</div>
+          <div class="cat-p" onclick="selectCat(this,'Other')">❓ Other</div>
+        </div>
+      </div>
+      <div id="c-cats-in" style="display:none">
+        <label style="display:block;margin-bottom:6px">Source</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+          <div class="cat-p" onclick="selectCat(this,'Salary')">💼 Salary</div>
+          <div class="cat-p" onclick="selectCat(this,'Side Hustle')">⚡ Side Hustle</div>
+          <div class="cat-p" onclick="selectCat(this,'Business Return')">📈 Business</div>
+          <div class="cat-p" onclick="selectCat(this,'Freelance')">💻 Freelance</div>
+          <div class="cat-p" onclick="selectCat(this,'Loan Repaid')">↩️ Loan Back</div>
+          <div class="cat-p" onclick="selectCat(this,'Gift/Bonus')">🎁 Gift</div>
+          <div class="cat-p" onclick="selectCat(this,'Dollar Account')">💵 Dollars</div>
+        </div>
+      </div>
+      <div id="c-helping-alert" style="display:none;padding:12px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:10px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:8px">⚠️ Helping People — be honest right now</div>
+        <div class="h-choice" onclick="selectHelping(this,'planned')">✅ Planned — it was in my budget</div>
+        <div class="h-choice" onclick="selectHelping(this,'unplanned')">⚠️ Unplanned — but I chose to give</div>
+        <div class="h-choice" onclick="selectHelping(this,'couldnt-say-no')">🚨 I could not say no</div>
+      </div>
+      <div id="c-salary-notice" style="display:none;padding:10px;background:rgba(16,240,160,0.06);border:1px solid rgba(16,240,160,0.15);border-radius:9px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+        <i class="ti ti-info-circle" style="color:var(--emerald)"></i> Salary logged end of month will be allocated to <strong style="color:var(--emerald)">next month's budget</strong> automatically.
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card2);border-radius:9px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px"><i class="ti ti-calendar-event" style="color:var(--teal)"></i>Past date?</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <span style="font-size:11px;color:var(--muted)" id="bd-label">Today</span>
+          <div style="position:relative;width:36px;height:20px" onclick="toggleBD()">
+            <div id="bd-track" style="width:36px;height:20px;border-radius:99px;background:var(--border);transition:background 0.2s"></div>
+            <div id="bd-thumb" style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all 0.2s"></div>
+          </div>
+        </label>
+      </div>
+      <div id="bd-field" style="display:none;margin-bottom:10px">
+        <input type="date" id="c-date" style="background:var(--card2);border:1px solid var(--teal);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+      </div>
+      <div class="form-group"><label>Note (optional)</label><input type="text" id="c-note" placeholder="e.g. Uber to CBD, Equity loan payment"></div>
+      <button class="btn btn-primary" id="c-btn" onclick="saveTxn()"><i class="ti ti-bolt"></i> Log Transaction</button>
+      <div class="section-divider" style="margin-top:1rem">Today</div>
+      <div class="grid2">
+        <div style="text-align:center;padding:10px;background:rgba(16,240,160,0.06);border-radius:10px;border:1px solid rgba(16,240,160,0.15)">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">In</div>
+          <div style="font-size:18px;font-weight:800;color:var(--emerald)" id="t-in">KES 0</div>
+        </div>
+        <div style="text-align:center;padding:10px;background:rgba(244,63,94,0.06);border-radius:10px;border:1px solid rgba(244,63,94,0.15)">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Out</div>
+          <div style="font-size:18px;font-weight:800;color:var(--danger)" id="t-out">KES 0</div>
+        </div>
+      </div>
+      <div id="today-list"><div class="empty-state" style="padding:1.5rem"><i class="ti ti-bolt"></i>No transactions today yet.</div></div>
+    </div>
+
+    <div class="page" id="page-budget">
+      <div class="card-lg">
+        <div class="section-title">Monthly Salary Setup</div>
+        <div class="alloc-banner"><i class="ti ti-info-circle"></i><div>Enter salary received end of month. Allocated to <strong style="color:var(--emerald)">next month's budget</strong>.</div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Salary (KES)</label><input type="number" inputmode="decimal" id="b-salary" placeholder="e.g. 61000"></div>
+          <div class="form-group"><label>Date Received</label><input type="date" id="b-salary-date"></div>
+        </div>
+        <div class="form-group"><label>This salary funds (budget month)</label>
+          <select id="b-salary-month">
+            <option value="2025-08">August 2025</option><option value="2025-09">September 2025</option>
+            <option value="2025-10">October 2025</option><option value="2025-11">November 2025</option>
+            <option value="2025-12">December 2025</option><option value="2026-01">January 2026</option>
+            <option value="2026-02">February 2026</option><option value="2026-03">March 2026</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveSalary()"><i class="ti ti-check"></i> Set Salary</button>
+      </div>
+      <div class="card-lg"><div class="section-title">Recommended Allocations</div><div id="budget-alloc"><div class="empty-state"><i class="ti ti-adjustments"></i>Set your salary above.</div></div></div>
+      <div class="card-lg"><div class="section-title">Budget vs Actual</div><div id="budget-perf"><div class="empty-state"><i class="ti ti-chart-bar"></i>Set your salary to see performance.</div></div></div>
+    </div>
+
+    <div class="page" id="page-tithe">
+      <div class="section-title">Tithe &amp; Offering</div>
+      <div class="grid2">
+        <div class="card"><div class="card-title"><i class="ti ti-calculator"></i> Tithe Due (10%)</div><div class="card-value" style="color:var(--amber)" id="tithe-due">KES 0</div><div class="card-sub">Of all income</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-check"></i> Tithe Paid</div><div class="card-value" style="color:var(--emerald)" id="tithe-paid">KES 0</div><div class="card-sub" id="tithe-status">Not paid yet</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-heart"></i> Offering</div><div class="card-value" style="color:var(--blue)" id="offering-paid">KES 0</div><div class="card-sub">Regular church offering</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-gift"></i> Total Giving</div><div class="card-value" style="color:var(--teal)" id="total-giving">KES 0</div><div class="card-sub">Tithe + Offering</div></div>
+      </div>
+      <div class="card-lg"><div class="section-title">Tithe Tracker</div><div id="tithe-breakdown"><div class="empty-state"><i class="ti ti-cash"></i>Log income to see tithe obligations.</div></div></div>
+      <div class="card-lg"><div class="section-title">Giving History</div><div id="giving-history"><div class="empty-state"><i class="ti ti-heart"></i>No giving recorded yet.</div></div></div>
+    </div>
+
+    <div class="page" id="page-debt">
+      <div class="grid2">
+        <div class="card"><div class="card-title"><i class="ti ti-credit-card"></i> Total Debt</div><div class="card-value" style="color:var(--danger)" id="debt-total">KES 0</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-calendar"></i> Est. Payoff</div><div class="card-value" style="color:var(--teal)" id="debt-payoff">—</div><div class="card-sub" id="debt-payoff-sub"></div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-trending-down"></i> Monthly Interest</div><div class="card-value" style="color:var(--danger)" id="debt-interest">KES 0</div><div class="card-sub">Cost of carrying debt</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-percentage"></i> Debt/Salary</div><div class="card-value" id="debt-dti">0%</div><div class="card-sub" id="debt-dti-sub">Set salary in Budget</div></div>
+      </div>
+      <div class="card-lg">
+        <div class="section-title">Add Debt</div>
+        <div class="form-row"><div class="form-group"><label>Lender</label><input type="text" id="d-lender" placeholder="e.g. Equity Bank"></div><div class="form-group"><label>Type</label><select id="d-type"><option>Bank Loan</option><option>Mobile Loan</option><option>Personal/Family</option><option>SACCO Loan</option><option>Other</option></select></div></div>
+        <div class="form-row"><div class="form-group"><label>Balance (KES)</label><input type="number" inputmode="decimal" id="d-balance" placeholder="0"></div><div class="form-group"><label>Monthly Payment</label><input type="number" inputmode="decimal" id="d-payment" placeholder="0"></div></div>
+        <div class="form-row"><div class="form-group"><label>Interest %/month</label><input type="number" inputmode="decimal" id="d-rate" placeholder="e.g. 1.5"></div><div class="form-group"><label>Due Date</label><input type="date" id="d-due"></div></div>
+        <button class="btn btn-primary" onclick="addDebt()"><i class="ti ti-plus"></i> Add Debt</button>
+      </div>
+      <div class="card-lg"><div class="section-title">Active Debts <button class="clear-btn" onclick="clearSection('debts')"><i class="ti ti-trash"></i> Clear</button></div><div id="debt-list"><div class="empty-state"><i class="ti ti-credit-card"></i>Add your loan above.</div></div></div>
+      <div class="card-lg" id="debt-coach-wrap" style="display:none"><div class="section-title">Debt Coach</div><div id="debt-coach"></div></div>
+    </div>
+
+    <div class="page" id="page-invest">
+      <div class="grid2">
+        <div class="card"><div class="card-title"><i class="ti ti-trending-up"></i> Portfolio Value</div><div class="card-value" style="color:var(--amber)" id="inv-total">KES 0</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-chart-bar"></i> Total P/L</div><div class="card-value" id="inv-pl">KES 0</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-coin"></i> Dollar Account</div><div class="card-value" style="color:var(--blue)" id="inv-dollars">$0</div><div class="card-sub" id="inv-dollars-kes">≈ KES 0</div></div>
+        <div class="card"><div class="card-title"><i class="ti ti-percentage"></i> Avg Return</div><div class="card-value" style="color:var(--emerald)" id="inv-avg-return">0%</div></div>
+      </div>
+      <div class="card-lg">
+        <div class="section-title">Add Investment</div>
+        <div class="form-group"><label>Name</label><input type="text" id="inv-name" placeholder="e.g. Perfume business, CIC MMF"></div>
+        <div class="form-group"><label>Type</label><select id="inv-type"><option>Business Partnership</option><option>Money Market Fund</option><option>SACCO</option><option>Treasury Bills</option><option>Treasury Bonds</option><option>NSE Stocks</option><option>Dollar Account</option><option>Real Estate</option><option>Other</option></select></div>
+        <div class="form-row"><div class="form-group"><label>Amount Invested (KES)</label><input type="number" inputmode="decimal" id="inv-invested" placeholder="0"></div><div class="form-group"><label>Current Value (KES)</label><input type="number" inputmode="decimal" id="inv-value" placeholder="0"></div></div>
+        <div class="form-row"><div class="form-group"><label>Expected Return %/year</label><input type="number" inputmode="decimal" id="inv-rate" placeholder="e.g. 14"></div><div class="form-group"><label>Dollar balance ($)</label><input type="number" inputmode="decimal" id="inv-dollars-in" placeholder="0"></div></div>
+        <button class="btn btn-primary" onclick="addInvestment()"><i class="ti ti-plus"></i> Add Investment</button>
+      </div>
+      <div class="card-lg"><div class="section-title">My Portfolio <button class="clear-btn" onclick="clearSection('investments')"><i class="ti ti-trash"></i> Clear</button></div><div id="inv-list"><div class="empty-state"><i class="ti ti-trending-up"></i>Add your investments above.</div></div></div>
+    </div>
+
+    <div class="page" id="page-emergency">
+      <div class="section-title">Emergency Fund</div>
+      <div class="card-lg">
+        <div class="form-group"><label>Monthly Living Expenses (KES)</label><input type="number" inputmode="decimal" id="em-monthly" placeholder="e.g. 45000" oninput="saveEM()"></div>
+        <div class="form-group"><label>Currently Saved (KES)</label><input type="number" inputmode="decimal" id="em-saved" placeholder="0" oninput="saveEM()"></div>
+        <div class="form-group"><label>Monthly Contribution (KES)</label><input type="number" inputmode="decimal" id="em-contrib" placeholder="e.g. 10000" oninput="saveEM()"></div>
+      </div>
+      <div id="em-progress"><div class="empty-state"><i class="ti ti-shield"></i>Enter your monthly expenses above.</div></div>
+    </div>
+
+    <div class="page" id="page-ff">
+      <div class="section-title">Financial Freedom Calculator</div>
+      <div class="card-lg">
+        <div class="form-group"><label>Monthly Expenses (KES)</label><input type="number" inputmode="decimal" id="ff-exp" placeholder="e.g. 63764" oninput="calcFF()"></div>
+        <div class="form-group"><label>Current Savings + Investments (KES)</label><input type="number" inputmode="decimal" id="ff-saved" placeholder="0" oninput="calcFF()"></div>
+        <div class="form-group"><label>Monthly Investment Amount (KES)</label><input type="number" inputmode="decimal" id="ff-monthly" placeholder="0" oninput="calcFF()"></div>
+        <div class="form-group"><label>Expected Annual Return %</label><input type="number" inputmode="decimal" id="ff-return" placeholder="e.g. 14" oninput="calcFF()"></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">Freedom Number</div><div class="card-value" style="color:var(--teal);font-size:17px" id="ff-number">—</div><div class="card-sub">25× annual expenses</div></div>
+        <div class="card"><div class="card-title">Years to Freedom</div><div class="card-value" style="color:var(--emerald)" id="ff-years">—</div></div>
+        <div class="card"><div class="card-title">Freedom Date</div><div class="card-value" style="font-size:17px" id="ff-date">—</div></div>
+        <div class="card"><div class="card-title">Monthly Passive Income</div><div class="card-value" style="color:var(--emerald);font-size:17px" id="ff-passive">—</div></div>
+      </div>
+      <div class="card-lg"><div class="section-title">Wealth Projection</div><div class="chart-wrap" style="height:200px"><canvas id="ffChart"></canvas></div></div>
+      <div class="card-lg"><div class="section-title">What if you invested more?</div><div id="ff-scenarios"></div></div>
+    </div>
+
+    <div class="page" id="page-history">
+      <div class="section-title">History <button class="clear-btn" onclick="clearSection('txns')"><i class="ti ti-trash"></i> Clear</button></div>
+      <div class="month-tabs" id="month-tabs"></div>
+      <div id="history-list"><div class="empty-state"><i class="ti ti-history"></i>No transactions yet.</div></div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bn-item active" id="bn-phase1" onclick="nav('phase1')"><i class="ti ti-bolt"></i><span>Log</span></div>
+    <div class="bn-item" id="bn-dashboard" onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i><span id="bn-dashboard-label">Home</span></div>
+    <div class="bn-item" id="bn-capture" onclick="nav('capture')" style="display:none"><i class="ti ti-bolt"></i><span>Capture</span></div>
+    <div class="bn-item" id="bn-budget" onclick="nav('budget')"><i class="ti ti-adjustments"></i><span id="bn-budget-label">Budget</span></div>
+    <div class="bn-item" id="bn-tithe" onclick="nav('tithe')"><i class="ti ti-heart"></i><span id="bn-tithe-label">Tithe</span></div>
+    <div class="bn-item" id="bn-debt" onclick="nav('debt')"><i class="ti ti-credit-card"></i><span id="bn-debt-label">Debt</span></div>
+    <div class="bn-item" id="bn-invest" onclick="nav('invest')"><i class="ti ti-trending-up"></i><span id="bn-invest-label">Invest</span></div>
+    <div class="bn-item" id="bn-emergency" onclick="nav('emergency')"><i class="ti ti-shield"></i><span id="bn-emergency-label">Emergency</span></div>
+    <div class="bn-item" id="bn-ff" onclick="nav('ff')"><i class="ti ti-calculator"></i><span id="bn-ff-label">Freedom</span></div>
+    <div class="bn-item" id="bn-history" onclick="nav('history')"><i class="ti ti-history"></i><span>History</span></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================
+   SUPABASE CONFIG
+   ============================================ */
+const SUPABASE_URL = 'https://exnwggidqowmjbryxqdu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4bndnZ2lkcW93bWpicnl4cWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NTE5NzQsImV4cCI6MjEwMTIyNzk3NH0.cRt2nInDvKUtB8txPTm_cqsB3wDqOFbw0S10yF-_mUE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var currentUser = null;
+var authMode = 'login';
+var userProfile = null;
+var isPhase2 = false;
+
+/* ============================================
+   HELPERS
+   ============================================ */
+const fmt = n => 'KES ' + Math.round(n || 0).toLocaleString();
+const today = () => new Date().toISOString().split('T')[0];
+const timeNow = () => new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', hour12: true });
+const formatDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+function showToast(msg, err) {
+  const t = document.getElementById('toast');
+  t.innerHTML = (err ? '<i class="ti ti-alert-circle"></i>' : '<i class="ti ti-circle-check"></i>') + msg;
+  t.className = 'toast' + (err ? ' error' : '') + ' show';
+  setTimeout(() => { t.className = 'toast' + (err ? ' error' : ''); }, 2800);
+}
+
+function setSyncStatus(state) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+}
+
+/* ============================================
+   AUTH
+   ============================================ */
+function setAuthMode(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-btn-text').textContent = mode === 'login' ? 'Log In' : 'Sign Up';
+  document.getElementById('auth-error').classList.remove('show');
+  const switchMsg = document.getElementById('auth-switch-msg');
+  if (mode === 'login') {
+    switchMsg.innerHTML = '<span style="font-size:12px;color:var(--muted)">Don\'t have an account? </span><button class="btn-text" onclick="setAuthMode(\'signup\')">Sign up</button>';
+  } else {
+    switchMsg.innerHTML = '<span style="font-size:12px;color:var(--muted)">Already have an account? </span><button class="btn-text" onclick="setAuthMode(\'login\')">Log in</button>';
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-submit-btn');
+
+  if (!email || !password) { showAuthError('Enter both email and password.'); return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+  btn.disabled = true;
+  document.getElementById('auth-error').classList.remove('show');
+
+  try {
+    if (authMode === 'login') {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showToast('Welcome back!');
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      showToast('Account created! You are now logged in.');
+    }
+  } catch (e) {
+    showAuthError(e.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  toggleUserMenu();
+  showToast('Logged out.');
+}
+
+function toggleUserMenu() {
+  const menu = document.getElementById('user-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('user-menu');
+  const avatar = document.getElementById('user-avatar');
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== avatar) {
+    menu.style.display = 'none';
+  }
+});
+
+async function checkAuthState() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user) {
+    currentUser = session.user;
+    showMainApp();
+  } else {
+    showAuthScreen();
+  }
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      showMainApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showAuthScreen();
+    }
+  });
+}
+
+function showAuthScreen() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+async function showMainApp() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'flex';
+  document.getElementById('user-email-display').textContent = currentUser.email;
+  const initials = currentUser.email.substring(0, 2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  setDateDefaults();
+  await loadOrCreateProfile();
+  applyPhaseGating();
+}
+
+/* ============================================
+   USER PROFILE / PHASE GATING
+   ============================================ */
+async function loadOrCreateProfile() {
+  const { data, error } = await sb.from('user_profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
+  if (error) { console.error(error); return; }
+  if (data) {
+    userProfile = data;
+  } else {
+    // first login ever - create profile with today as signup date
+    const { data: created, error: createErr } = await sb.from('user_profiles').insert({
+      user_id: currentUser.id, signup_date: today(), phase2_unlocked: false
+    }).select().maybeSingle();
+    if (createErr) { console.error(createErr); return; }
+    userProfile = created;
+  }
+  isPhase2 = !!(userProfile && userProfile.phase2_unlocked);
+}
+
+async function getActiveDaysCount() {
+  const txns = await fetchTxns();
+  const signupDate = userProfile ? userProfile.signup_date : today();
+  const validDates = new Set(txns.filter(t => t.date >= signupDate).map(t => t.date));
+  return validDates.size;
+}
+
+async function getStreak() {
+  const txns = await fetchTxns();
+  const dates = [...new Set(txns.map(t => t.date))].sort().reverse();
+  let streak = 0, check = today();
+  for (const d of dates) {
+    if (d === check) { streak++; const p = new Date(check + 'T00:00:00'); p.setDate(p.getDate() - 1); check = p.toISOString().split('T')[0]; }
+    else if (d < check) break;
+  }
+  return streak;
+}
+
+function applyPhaseGating() {
+  const gatedIds = ['dashboard', 'budget', 'tithe', 'debt', 'invest', 'emergency', 'ff'];
+  const phaseBadge = document.getElementById('phase-badge');
+
+  if (isPhase2) {
+    document.getElementById('bn-phase1').style.display = 'none';
+    document.getElementById('bn-dashboard').style.display = 'flex';
+    document.getElementById('bn-capture').style.display = 'flex';
+    phaseBadge.style.display = 'none';
+    gatedIds.forEach(id => {
+      const label = document.getElementById('bn-' + id + '-label');
+      if (label) label.parentElement.querySelector('i').className = ({
+        dashboard: 'ti ti-layout-dashboard', budget: 'ti ti-adjustments', tithe: 'ti ti-heart',
+        debt: 'ti ti-credit-card', invest: 'ti ti-trending-up', emergency: 'ti ti-shield', ff: 'ti ti-calculator'
+      })[id];
+    });
+    nav('dashboard');
+  } else {
+    document.getElementById('bn-dashboard').style.display = 'none';
+    phaseBadge.style.display = 'flex';
+    nav('phase1');
+  }
+}
+
+async function checkPhase2UnlockCondition() {
+  if (isPhase2) return;
+  const activeDays = await getActiveDaysCount();
+  if (activeDays >= 30 && userProfile && !userProfile.phase2_unlocked) {
+    // Generate personalized budget from their 30 days of data
+    const generatedBudget = await generatePersonalizedBudget();
+    const { error } = await sb.from('user_profiles').update({
+      phase2_unlocked: true, phase2_unlocked_at: new Date().toISOString(), generated_budget: generatedBudget
+    }).eq('user_id', currentUser.id);
+    if (!error) {
+      userProfile.phase2_unlocked = true;
+      userProfile.generated_budget = generatedBudget;
+      isPhase2 = true;
+      nav('unlock-celebration');
+      return true;
+    }
+  }
+  return false;
+}
+
+function enterPhase2() {
+  applyPhaseGating();
+}
+
+/* ============================================
+   PERSONALIZED BUDGET GENERATOR
+   Blends actual spending with best-practice guardrails
+   ============================================ */
+const BUDGET_GUARDRAILS = {
+  'Housing/Rent':        { min: 15, max: 30, label: '🏠 Housing/Rent' },
+  'Tithe':               { min: 10, max: 10, label: '⛪ Tithe' },
+  'Offering':            { min: 0,  max: 5,  label: '🙏 Offering' },
+  'Church/Fellowship':   { min: 0,  max: 5,  label: '⛪ Church' },
+  'Loan Payment':        { min: 0,  max: 35, label: '🏦 Loan Repayment' },
+  'Transport':           { min: 5,  max: 15, label: '🚗 Transport' },
+  'Food & Drink':        { min: 8,  max: 20, label: '🍽️ Food & Drink' },
+  'Food Treats':         { min: 0,  max: 5,  label: '🍟 Food Treats' },
+  'Savings/Investment':  { min: 10, max: 30, label: '💰 Savings/Investment' },
+  'Kenya Power':         { min: 1,  max: 6,  label: '⚡ Kenya Power' },
+  'Water Bill':          { min: 1,  max: 4,  label: '💧 Water Bill' },
+  'Airtime/Data':        { min: 1,  max: 6,  label: '📱 Airtime/Data' },
+  'Barber/Grooming':     { min: 0,  max: 4,  label: '✂️ Grooming' },
+  'Entertainment':       { min: 0,  max: 8,  label: '🎬 Entertainment' },
+  'Business Investment': { min: 0,  max: 15, label: '📈 Business Investment' },
+  'Medical':             { min: 0,  max: 8,  label: '💊 Medical' },
+  'Shopping':            { min: 0,  max: 10, label: '🛍️ Shopping' },
+  'Helping People':      { min: 0,  max: 10, label: '🤝 Helping People' },
+  'Family Support':      { min: 0,  max: 10, label: '👨‍👩‍👧 Family Support' },
+  'Service Fee':         { min: 0,  max: 4,  label: '🧾 Service Fees' },
+};
+const MIN_CATEGORY_PCT = 2; // categories below this % of spending get lumped into "Other"
+
+async function generatePersonalizedBudget() {
+  const txns = await fetchTxns();
+  const signupDate = userProfile ? userProfile.signup_date : today();
+  const phase1Txns = txns.filter(t => t.date >= signupDate && t.direction === 'out');
+  const totalSpent = phase1Txns.reduce((s, t) => s + t.amount, 0);
+  if (totalSpent === 0) return { categories: [], generatedAt: new Date().toISOString() };
+
+  const catTotals = {};
+  phase1Txns.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+
+  const categories = [];
+  let otherTotal = 0;
+
+  Object.keys(catTotals).forEach(cat => {
+    const spent = catTotals[cat];
+    const actualPct = (spent / totalSpent) * 100;
+
+    if (actualPct < MIN_CATEGORY_PCT) {
+      otherTotal += spent;
+      return;
+    }
+
+    const guardrail = BUDGET_GUARDRAILS[cat] || { min: 0, max: 100, label: cat };
+    let targetPct = actualPct;
+    let flagged = false;
+    let flagMsg = '';
+
+    if (actualPct > guardrail.max) {
+      targetPct = guardrail.max;
+      flagged = true;
+      flagMsg = `You spent ${actualPct.toFixed(0)}% on ${guardrail.label.replace(/^\S+\s/, '')} — above the healthy range (${guardrail.min}–${guardrail.max}%). Target set to ${guardrail.max}% to help you work toward it.`;
+    } else if (actualPct < guardrail.min && guardrail.min > 0) {
+      targetPct = guardrail.min;
+      flagged = true;
+      flagMsg = `You spent ${actualPct.toFixed(0)}% on ${guardrail.label.replace(/^\S+\s/, '')} — below the typical range. Target set to ${guardrail.min}% as a guide.`;
+    }
+
+    categories.push({
+      category: cat,
+      label: guardrail.label,
+      actualPct: Math.round(actualPct * 10) / 10,
+      targetPct: Math.round(targetPct * 10) / 10,
+      flagged,
+      flagMsg
+    });
+  });
+
+  if (otherTotal > 0) {
+    const otherPct = (otherTotal / totalSpent) * 100;
+    categories.push({ category: 'Other', label: '❓ Other', actualPct: Math.round(otherPct * 10) / 10, targetPct: Math.round(otherPct * 10) / 10, flagged: false, flagMsg: '' });
+  }
+
+  categories.sort((a, b) => b.targetPct - a.targetPct);
+  return { categories, generatedAt: new Date().toISOString(), totalSpentInPhase1: totalSpent };
+}
+
+function setDateDefaults() {
+  ['c-date', 'b-salary-date', 'd-due'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value && id !== 'c-date') el.value = today();
+  });
+}
+
+/* ============================================
+   DATA LAYER - Supabase CRUD
+   ============================================ */
+async function fetchTxns() {
+  const { data, error } = await sb.from('transactions').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
+  if (error) { console.error(error); return []; }
+  return data.map(t => ({
+    id: t.id, date: t.date, time: t.time, direction: t.direction, amount: parseFloat(t.amount),
+    category: t.category, note: t.note, helpingType: t.helping_type, backdated: t.backdated, budgetMonth: t.budget_month
+  }));
+}
+
+async function insertTxn(txn) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('transactions').insert({
+    user_id: currentUser.id, date: txn.date, time: txn.time, direction: txn.direction,
+    amount: txn.amount, category: txn.category, note: txn.note,
+    helping_type: txn.helpingType, backdated: txn.backdated, budget_month: txn.budgetMonth
+  });
+  if (error) { setSyncStatus('error'); showToast('Sync failed: ' + error.message, true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function deleteTxnRemote(id) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('transactions').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { setSyncStatus('error'); showToast('Delete failed.', true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function fetchSalary(month) {
+  const { data, error } = await sb.from('salary').select('*').eq('user_id', currentUser.id).eq('budget_month', month).maybeSingle();
+  if (error) { console.error(error); return null; }
+  return data ? { amount: parseFloat(data.amount), date: data.date_received, month: data.budget_month } : null;
+}
+
+async function fetchLatestSalary() {
+  const { data, error } = await sb.from('salary').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (error) { console.error(error); return null; }
+  return data ? { amount: parseFloat(data.amount), date: data.date_received, month: data.budget_month } : null;
+}
+
+async function upsertSalary(amount, date, month) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('salary').upsert({
+    user_id: currentUser.id, amount, date_received: date, budget_month: month
+  }, { onConflict: 'user_id,budget_month' });
+  if (error) { setSyncStatus('error'); showToast('Sync failed: ' + error.message, true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function fetchDebts() {
+  const { data, error } = await sb.from('debts').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
+  if (error) { console.error(error); return []; }
+  return data.map(d => ({
+    id: d.id, lender: d.lender, type: d.type, balance: parseFloat(d.balance),
+    payment: parseFloat(d.monthly_payment), rate: parseFloat(d.rate), due: d.due_date
+  }));
+}
+
+async function insertDebt(debt) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('debts').insert({
+    user_id: currentUser.id, lender: debt.lender, type: debt.type, balance: debt.balance,
+    monthly_payment: debt.payment, rate: debt.rate, due_date: debt.due || null
+  });
+  if (error) { setSyncStatus('error'); showToast('Sync failed: ' + error.message, true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function deleteDebtRemote(id) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('debts').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { setSyncStatus('error'); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function fetchInvestments() {
+  const { data, error } = await sb.from('investments').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
+  if (error) { console.error(error); return []; }
+  return data.map(i => ({
+    id: i.id, name: i.name, type: i.type, invested: parseFloat(i.invested),
+    value: parseFloat(i.current_value), rate: parseFloat(i.rate), dollars: parseFloat(i.dollars || 0)
+  }));
+}
+
+async function insertInvestment(inv) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('investments').insert({
+    user_id: currentUser.id, name: inv.name, type: inv.type, invested: inv.invested,
+    current_value: inv.value, rate: inv.rate, dollars: inv.dollars
+  });
+  if (error) { setSyncStatus('error'); showToast('Sync failed: ' + error.message, true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function deleteInvRemote(id) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('investments').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) { setSyncStatus('error'); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function fetchEmergency() {
+  const { data, error } = await sb.from('emergency_fund').select('*').eq('user_id', currentUser.id).maybeSingle();
+  if (error) { console.error(error); return {}; }
+  return data ? { monthly: parseFloat(data.monthly_expenses), saved: parseFloat(data.saved), contrib: parseFloat(data.monthly_contribution) } : {};
+}
+
+async function upsertEmergency(monthly, saved, contrib) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from('emergency_fund').upsert({
+    user_id: currentUser.id, monthly_expenses: monthly, saved, monthly_contribution: contrib
+  }, { onConflict: 'user_id' });
+  if (error) { setSyncStatus('error'); showToast('Sync failed: ' + error.message, true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+async function clearTable(table) {
+  setSyncStatus('syncing');
+  const { error } = await sb.from(table).delete().eq('user_id', currentUser.id);
+  if (error) { setSyncStatus('error'); showToast('Clear failed.', true); return false; }
+  setSyncStatus('ok'); return true;
+}
+
+/* ============================================
+   CAPTURE STATE
+   ============================================ */
+var cDir = 'out', cCat = '', cHelping = '', cBD = false;
+
+function setCDir(dir) {
+  cDir = dir; cCat = ''; cHelping = '';
+  document.querySelectorAll('.cat-p').forEach(p => p.classList.remove('sel', 'sel-danger'));
+  document.getElementById('c-helping-alert').style.display = 'none';
+  document.querySelectorAll('.h-choice').forEach(c => c.classList.remove('sel'));
+  document.getElementById('c-cats-out').style.display = dir === 'out' ? 'block' : 'none';
+  document.getElementById('c-cats-in').style.display = dir === 'in' ? 'block' : 'none';
+  document.getElementById('c-salary-notice').style.display = 'none';
+  const o = document.getElementById('ctab-out'), i = document.getElementById('ctab-in');
+  if (dir === 'out') {
+    o.style.cssText = 'flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:rgba(244,63,94,0.1);color:var(--danger);border:1px solid rgba(244,63,94,0.3)';
+    i.style.cssText = 'flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)';
+  } else {
+    i.style.cssText = 'flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:rgba(16,240,160,0.1);color:var(--emerald);border:1px solid rgba(16,240,160,0.3)';
+    o.style.cssText = 'flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)';
+  }
+}
+
+function selectCat(el, cat) {
+  document.querySelectorAll('.cat-p').forEach(p => p.classList.remove('sel', 'sel-danger'));
+  cCat = cat; cHelping = '';
+  const isHelp = cat === 'Helping People' || cat === 'Family Support';
+  el.classList.add(isHelp ? 'sel-danger' : 'sel');
+  document.getElementById('c-helping-alert').style.display = isHelp ? 'block' : 'none';
+  document.getElementById('c-salary-notice').style.display = cat === 'Salary' ? 'block' : 'none';
+  document.querySelectorAll('.h-choice').forEach(c => c.classList.remove('sel'));
+}
+
+function selectHelping(el, type) {
+  document.querySelectorAll('.h-choice').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel'); cHelping = type;
+}
+
+function toggleBD() {
+  cBD = !cBD;
+  document.getElementById('bd-track').style.background = cBD ? 'var(--teal)' : 'var(--border)';
+  document.getElementById('bd-thumb').style.cssText = 'position:absolute;top:3px;left:' + (cBD ? 19 : 3) + 'px;width:14px;height:14px;border-radius:50%;background:' + (cBD ? '#060d1a' : 'var(--muted)') + ';transition:all 0.2s';
+  document.getElementById('bd-field').style.display = cBD ? 'block' : 'none';
+  document.getElementById('bd-label').textContent = cBD ? 'Past date' : 'Today';
+  if (cBD) {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    document.getElementById('c-date').value = y.toISOString().split('T')[0];
+    document.getElementById('c-date').max = today();
+  }
+}
+
+async function saveTxn() {
+  const amount = parseFloat(document.getElementById('c-amount').value) || 0;
+  if (amount <= 0) { showToast('Enter an amount.', true); return; }
+  if (!cCat) { showToast('Select a category.', true); return; }
+  const isHelp = cCat === 'Helping People' || cCat === 'Family Support';
+  if (isHelp && !cHelping) { showToast('Answer the helping question honestly.', true); return; }
+
+  const note = document.getElementById('c-note').value.trim();
+  const txnDate = cBD ? (document.getElementById('c-date').value || today()) : today();
+  let budgetMonth = txnDate.substring(0, 7);
+  if (cCat === 'Salary') {
+    const d = new Date(txnDate + 'T00:00:00');
+    if (d.getDate() >= 28) {
+      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      budgetMonth = next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0');
+    }
+  }
+
+  const txn = { date: txnDate, time: timeNow(), direction: cDir, amount, category: cCat, note, helpingType: isHelp ? cHelping : null, backdated: cBD, budgetMonth };
+  const ok = await insertTxn(txn);
+  if (!ok) return;
+
+  document.getElementById('c-amount').value = '';
+  document.getElementById('c-note').value = '';
+  document.querySelectorAll('.cat-p').forEach(p => p.classList.remove('sel', 'sel-danger'));
+  document.getElementById('c-helping-alert').style.display = 'none';
+  document.querySelectorAll('.h-choice').forEach(c => c.classList.remove('sel'));
+  document.getElementById('c-salary-notice').style.display = 'none';
+  cCat = ''; cHelping = '';
+  if (cBD) toggleBD();
+
+  const msg = isHelp && cHelping === 'couldnt-say-no' ? '🚨 Logged. You said you couldn\'t say no.' : isHelp && cHelping === 'unplanned' ? '⚠️ Logged. Was it urgent or your need to be needed?' : '✓ Logged.';
+  showToast(msg);
+  if (isPhase2) {
+    await renderCapture(); await renderDashboard();
+  } else {
+    await renderPhase1();
+  }
+}
+
+async function deleteTxnUI(id) {
+  const ok = await deleteTxnRemote(id);
+  if (!ok) return;
+  await renderCapture(); await renderDashboard(); await renderHistory();
+}
+
+async function renderCapture() {
+  const txns = await fetchTxns();
+  const td = txns.filter(t => t.date === today());
+  const tIn = td.filter(t => t.direction === 'in').reduce((s, t) => s + t.amount, 0);
+  const tOut = td.filter(t => t.direction === 'out').reduce((s, t) => s + t.amount, 0);
+  document.getElementById('t-in').textContent = fmt(tIn);
+  document.getElementById('t-out').textContent = fmt(tOut);
+  const list = document.getElementById('today-list');
+  if (!td.length) { list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-bolt"></i>No transactions today yet.</div>'; return; }
+  const cc = { 'Food & Drink': '#f43f5e', 'Transport': '#fbbf24', 'Housing/Rent': '#3d8bff', 'Helping People': '#f43f5e', 'Tithe': '#10f0a0', 'Offering': '#3d8bff', 'Loan Payment': '#f97316', 'Business Investment': '#10f0a0', 'Savings/Investment': '#10f0a0' };
+  list.innerHTML = [...td].reverse().map(t => {
+    const c = cc[t.category] || '#6b87aa';
+    const hb = t.helpingType ? `<span class="badge ${t.helpingType === 'couldnt-say-no' ? 'badge-red' : t.helpingType === 'unplanned' ? 'badge-amber' : 'badge-green'}" style="margin-left:4px">${t.helpingType === 'couldnt-say-no' ? '😬' : t.helpingType === 'unplanned' ? '⚠️' : '✅'}</span>` : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
+      <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600"><span style="background:${c}22;color:${c};padding:1px 6px;border-radius:5px;font-size:11px">${t.category}</span>${hb}</div>${t.note ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${t.note}</div>` : ''}</div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:${t.direction === 'in' ? 'var(--emerald)' : 'var(--danger)'}">${t.direction === 'in' ? '+' : '-'}${fmt(t.amount)}</div><div style="font-size:10px;color:var(--muted)">${t.time || ''}</div></div>
+      <button class="del-btn" onclick="deleteTxnUI(${t.id})"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================
+   PHASE 1 PROGRESS PAGE
+   ============================================ */
+async function renderPhase1() {
+  const txns = await fetchTxns();
+  const signupDate = userProfile ? userProfile.signup_date : today();
+  const phase1Txns = txns.filter(t => t.date >= signupDate);
+  const activeDays = await getActiveDaysCount();
+  const streak = await getStreak();
+  const pct = Math.min(100, Math.round(activeDays / 30 * 100));
+
+  document.getElementById('p1-streak-num').textContent = streak;
+  if (streak === 0) {
+    document.getElementById('p1-streak-title').textContent = 'Start your streak today';
+    document.getElementById('p1-streak-sub').textContent = 'Log every transaction the moment it happens';
+  } else {
+    document.getElementById('p1-streak-title').textContent = streak + '-day streak. Keep it going.';
+    document.getElementById('p1-streak-sub').textContent = (30 - activeDays) + ' more active days to unlock Phase 2';
+  }
+
+  document.getElementById('p1-pct').textContent = pct + '%';
+  document.getElementById('p1-bar').style.width = pct + '%';
+
+  const totalIn = phase1Txns.filter(t => t.direction === 'in').reduce((s, t) => s + t.amount, 0);
+  const totalOut = phase1Txns.filter(t => t.direction === 'out').reduce((s, t) => s + t.amount, 0);
+  document.getElementById('p1-in').textContent = fmt(totalIn);
+  document.getElementById('p1-out').textContent = fmt(totalOut);
+
+  // day dots
+  const activeDates = new Set(phase1Txns.map(t => t.date));
+  let dots = '';
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(signupDate + 'T00:00:00'); d.setDate(d.getDate() + i);
+    const ds = d.toISOString().split('T')[0];
+    const done = activeDates.has(ds), future = ds > today();
+    const bg = done ? 'var(--emerald)' : future ? 'var(--card2)' : 'var(--danger)';
+    const border = done ? 'var(--emerald)' : future ? 'var(--border)' : 'var(--danger)';
+    const color = done ? '#060d1a' : future ? 'var(--muted)' : '#f43f5e';
+    dots += `<div style="width:24px;height:24px;border-radius:50%;background:${bg};border:2px solid ${border};display:flex;align-items:center;justify-content:center;font-size:9px;color:${color};font-weight:600" title="Day ${i + 1}">${done ? '✓' : future ? i + 1 : '✗'}</div>`;
+  }
+  document.getElementById('p1-day-dots').innerHTML = dots;
+
+  // header badge
+  const badge = document.getElementById('phase-badge');
+  if (badge) badge.innerHTML = `<i class="ti ti-flame"></i> Day ${activeDays}`;
+
+  // today's list (reuse capture logic)
+  const td = txns.filter(t => t.date === today());
+  const list = document.getElementById('p1-today-list');
+  if (!td.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-bolt"></i>No transactions today yet.</div>';
+  } else {
+    const cc = { 'Food & Drink': '#f43f5e', 'Transport': '#fbbf24', 'Housing/Rent': '#3d8bff', 'Helping People': '#f43f5e', 'Tithe': '#10f0a0', 'Offering': '#3d8bff' };
+    list.innerHTML = [...td].reverse().map(t => {
+      const c = cc[t.category] || '#6b87aa';
+      const hb = t.helpingType ? `<span class="badge ${t.helpingType === 'couldnt-say-no' ? 'badge-red' : t.helpingType === 'unplanned' ? 'badge-amber' : 'badge-green'}" style="margin-left:4px">${t.helpingType === 'couldnt-say-no' ? '😬' : t.helpingType === 'unplanned' ? '⚠️' : '✅'}</span>` : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:8px">
+        <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600"><span style="background:${c}22;color:${c};padding:1px 6px;border-radius:5px;font-size:11px">${t.category}</span>${hb}</div>${t.note ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${t.note}</div>` : ''}</div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:${t.direction === 'in' ? 'var(--emerald)' : 'var(--danger)'}">${t.direction === 'in' ? '+' : '-'}${fmt(t.amount)}</div><div style="font-size:10px;color:var(--muted)">${t.time || ''}</div></div>
+        <button class="del-btn" onclick="deleteTxnUI(${t.id})"><i class="ti ti-trash"></i></button>
+      </div>`;
+    }).join('');
+  }
+
+  // Check if they just crossed the 30-day threshold
+  await checkPhase2UnlockCondition();
+}
+
+
+async function saveSalary() {
+  const amount = parseFloat(document.getElementById('b-salary').value) || 0;
+  const date = document.getElementById('b-salary-date').value;
+  const month = document.getElementById('b-salary-month').value;
+  if (!amount) { showToast('Enter salary amount.', true); return; }
+  const ok = await upsertSalary(amount, date, month);
+  if (!ok) return;
+  showToast('Salary set!');
+  await renderBudget(); await renderDashboard(); await renderTithe();
+}
+
+async function getSalary() {
+  return (await fetchLatestSalary()) || {};
+}
+
+/* ============================================
+   DASHBOARD
+   ============================================ */
+let spendChart = null;
+async function renderDashboard() {
+  const txns = await fetchTxns();
+  const sal = await getSalary();
+  const debts = await fetchDebts();
+  const invs = await fetchInvestments();
+  const em = await fetchEmergency();
+
+  const salary = sal.amount || 0;
+  const totalIn = txns.filter(t => t.direction === 'in').reduce((s, t) => s + t.amount, 0);
+  const totalOut = txns.filter(t => t.direction === 'out').reduce((s, t) => s + t.amount, 0);
+  const balance = totalIn - totalOut;
+  const invTotal = invs.reduce((s, i) => s + i.value, 0);
+  const debtTotal = debts.reduce((s, d) => s + d.balance, 0);
+  const netWorth = balance + invTotal - debtTotal;
+  const savRate = totalIn > 0 ? Math.round(balance / totalIn * 100) : 0;
+
+  document.getElementById('d-salary').textContent = salary > 0 ? fmt(salary) : 'Not set';
+  document.getElementById('d-sal-sub').textContent = salary > 0 ? 'Budget: ' + (sal.month || '—') : 'Set in Budget tab';
+  document.getElementById('d-balance').textContent = fmt(balance);
+  document.getElementById('d-balance').style.color = balance >= 0 ? 'var(--teal)' : 'var(--danger)';
+  document.getElementById('d-spent').textContent = fmt(totalOut);
+  document.getElementById('d-spent-pct').textContent = salary > 0 ? Math.round(totalOut / salary * 100) + '% of salary' : '—';
+  document.getElementById('d-tithe').textContent = fmt(totalIn * 0.1);
+  document.getElementById('d-loan').textContent = debtTotal > 0 ? fmt(debtTotal) : 'KES 0';
+  document.getElementById('d-loan').style.color = debtTotal > 0 ? 'var(--danger)' : 'var(--emerald)';
+  document.getElementById('d-networth').textContent = fmt(netWorth);
+  document.getElementById('d-networth').style.color = netWorth >= 0 ? 'var(--blue)' : 'var(--danger)';
+  document.getElementById('header-sub').textContent = 'Synced · ' + new Date().toLocaleString('en-KE', { month: 'long', year: 'numeric' });
+
+  let score = 0;
+  if (savRate >= 20) score += 30; else if (savRate >= 10) score += 15;
+  const em3 = (em.monthly || 0) * 3, emPct = em3 > 0 ? Math.min(100, Math.round((em.saved || 0) / em3 * 100)) : 0;
+  if (emPct >= 100) score += 25; else score += Math.round(emPct * 0.25);
+  const dti = salary > 0 ? Math.round(debtTotal / salary * 100) : 0;
+  if (dti === 0) score += 25; else if (dti <= 35) score += 15;
+  if (invTotal > 0) score += 20;
+  score = Math.min(100, score);
+
+  document.getElementById('health-score').textContent = score;
+  document.getElementById('health-arc').setAttribute('stroke-dashoffset', 251.2 * (1 - score / 100));
+  document.getElementById('hs-sr').textContent = savRate + '%';
+  document.getElementById('hs-sr-bar').style.width = Math.min(100, savRate / 25 * 100) + '%';
+  document.getElementById('hs-em').textContent = emPct + '%';
+  document.getElementById('hs-em-bar').style.width = emPct + '%';
+  document.getElementById('hs-debt').textContent = dti + '%';
+  document.getElementById('hs-debt-bar').style.width = Math.min(100, dti) + '%';
+  document.getElementById('hs-debt-bar').style.background = dti > 35 ? 'var(--danger)' : dti > 20 ? 'var(--amber)' : 'var(--emerald)';
+
+  const ct = {};
+  txns.filter(t => t.direction === 'out').forEach(t => ct[t.category] = (ct[t.category] || 0) + t.amount);
+  const cats = Object.keys(ct), vals = Object.values(ct);
+  const pal = ['#f43f5e', '#fbbf24', '#10f0a0', '#3d8bff', '#818cf8', '#00e5ff', '#fb923c', '#22c55e', '#06b6d4', '#a78bfa'];
+  const pie = document.getElementById('spendChart');
+  if (pie) {
+    if (spendChart) { spendChart.destroy(); spendChart = null; }
+    if (cats.length) spendChart = new Chart(pie, { type: 'doughnut', data: { labels: cats, datasets: [{ data: vals, backgroundColor: pal.slice(0, cats.length), borderColor: '#0f1e35', borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { color: '#6b87aa', font: { size: 10 }, boxWidth: 10 } }, tooltip: { callbacks: { label: c => `${c.label}: KES ${c.raw.toLocaleString()}` } } } } });
+  }
+
+  const flags = [];
+  if (!salary) { flags.push({ t: 'blue', i: 'ti-info-circle', txt: 'Set your monthly salary in the Budget tab to unlock personalised insights.' }); }
+  else {
+    if (savRate < 5) flags.push({ t: 'red', i: 'ti-alert-circle', txt: `Spending <strong>${Math.round(totalOut / salary * 100)}%</strong> of salary with only <strong>${savRate}% remaining</strong>. Your priority is reversing this ratio.` });
+    else if (savRate >= 20) flags.push({ t: 'green', i: 'ti-star', txt: `Savings rate <strong>${savRate}%</strong> — above the recommended 20%. You are building real financial margin.` });
+    else flags.push({ t: 'amber', i: 'ti-trending-up', txt: `Savings rate <strong>${savRate}%</strong>. Target is 20%. You need <strong>${fmt(totalIn * 0.2 - balance)}</strong> more saved.` });
+    if (debtTotal > 0) flags.push({ t: 'amber', i: 'ti-credit-card', txt: `<strong>${fmt(debtTotal)}</strong> in outstanding debt. Clear this before any new investment.` });
+    else flags.push({ t: 'green', i: 'ti-circle-check', txt: 'Zero debt. Every shilling you earn now builds your future.' });
+    if (invTotal > 0) flags.push({ t: 'green', i: 'ti-trending-up', txt: `Investment portfolio worth <strong>${fmt(invTotal)}</strong>. Keep growing this.` });
+    const cantNo = txns.filter(t => t.helpingType === 'couldnt-say-no').length;
+    const helping = txns.filter(t => t.helpingType).reduce((s, t) => s + t.amount, 0);
+    if (cantNo > 0) flags.push({ t: 'amber', i: 'ti-heart', txt: `<strong>${cantNo} "couldn't say no" moment(s)</strong> costing <strong>${fmt(helping)}</strong>.` });
+    else if (txns.length > 5) flags.push({ t: 'green', i: 'ti-heart', txt: 'Zero unplanned helping spending. The habit is holding.' });
+  }
+  document.getElementById('dash-insights').innerHTML = flags.length ? flags.map(f => `<div class="flag ${f.t}"><i class="ti ${f.i}"></i><div>${f.txt}</div></div>`).join('') : '<div class="empty-state"><i class="ti ti-bulb"></i>Log transactions to activate your coach.</div>';
+}
+
+/* ============================================
+   BUDGET
+   ============================================ */
+async function renderBudget() {
+  const sal = await getSalary();
+  const salary = sal.amount || 0;
+  if (sal.amount) document.getElementById('b-salary').value = sal.amount;
+  if (sal.date) document.getElementById('b-salary-date').value = sal.date;
+  if (sal.month) document.getElementById('b-salary-month').value = sal.month;
+
+  const generated = userProfile && userProfile.generated_budget;
+  let categories = generated && generated.categories ? [...generated.categories] : [];
+
+  // Pull THIS MONTH's actual spending AND income
+  const txns = await fetchTxns(), ct = {};
+  const thisMonth = today().substring(0, 7);
+  const monthTxns = txns.filter(t => t.date && t.date.startsWith(thisMonth));
+  const monthOutTxns = monthTxns.filter(t => t.direction === 'out');
+  const monthInTxns = monthTxns.filter(t => t.direction === 'in');
+  monthOutTxns.forEach(t => ct[t.category] = (ct[t.category] || 0) + t.amount);
+  const monthTotal = monthOutTxns.reduce((s, t) => s + t.amount, 0);
+
+  // Total income this month = salary entry (if logged as income) + every other income category
+  // We use total logged income as the base for budget %, since tithe and realistic targets
+  // should reflect everything received, not just the salary line item.
+  const totalIncomeThisMonth = monthInTxns.reduce((s, t) => s + t.amount, 0);
+  const baseAmount = totalIncomeThisMonth > 0 ? totalIncomeThisMonth : salary;
+
+  // Dynamically add any category with real spending this month that isn't already tracked,
+  // so nothing stays invisible just because it wasn't part of the original 30-day snapshot.
+  const trackedCats = new Set(categories.map(c => c.category));
+  Object.keys(ct).forEach(cat => {
+    if (trackedCats.has(cat)) return;
+    const g = BUDGET_GUARDRAILS[cat];
+    if (!g) return; // no guardrail defined (e.g. truly uncategorized) - skip
+    const defaultTargetPct = g.min > 0 ? g.min : Math.min(g.max, 5); // sensible starting target
+    categories.push({ category: cat, label: g.label, actualPct: 0, targetPct: defaultTargetPct, flagged: false, flagMsg: '', autoAdded: true });
+  });
+
+  if (!categories.length) {
+    document.getElementById('budget-alloc').innerHTML = '<div class="empty-state"><i class="ti ti-adjustments"></i>Your personalized budget will appear here once generated from your Phase 1 data.</div>';
+    document.getElementById('budget-perf').innerHTML = '<div class="empty-state"><i class="ti ti-chart-bar"></i>No personalized budget available yet.</div>';
+    return;
+  }
+
+  if (!baseAmount) {
+    document.getElementById('budget-alloc').innerHTML = '<div class="empty-state"><i class="ti ti-cash"></i>Log your income this month (or set salary above) to see KES targets.</div>';
+  } else {
+    document.getElementById('budget-alloc').innerHTML = categories.map(c => {
+      const amt = baseAmount * c.targetPct / 100;
+      const newBadge = c.autoAdded ? '<span class="badge badge-teal" style="margin-left:5px">New</span>' : '';
+      return `<div class="tithe-bar"><div style="font-size:12px">${c.label}${newBadge}</div><div style="font-size:12px;color:var(--teal);font-weight:600">${fmt(amt)} <span style="color:var(--muted);font-size:10px">(${c.targetPct}%)</span></div></div>`;
+    }).join('');
+    document.getElementById('budget-alloc').insertAdjacentHTML('beforeend',
+      `<div style="font-size:10.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Based on <strong style="color:var(--text)">${fmt(baseAmount)}</strong> total income ${totalIncomeThisMonth > 0 ? 'logged' : '(salary)'} this month.</div>`);
+  }
+
+  if (!baseAmount) {
+    document.getElementById('budget-perf').innerHTML = '<div class="empty-state"><i class="ti ti-chart-bar"></i>Log income or set salary above to compare against this month.</div>';
+    return;
+  }
+
+  // Recalculate flags live: only warn once there's enough real data this month to trust the percentage
+  const liveFlags = [];
+  const MIN_SPEND_TO_FLAG = 3000;      // require meaningful total spending logged this month
+  const MIN_DAY_OF_MONTH_TO_FLAG = 10; // require at least 10 days into the month before trusting the ratio
+  const dayOfMonth = new Date().getDate();
+  const enoughDataToFlag = monthTotal >= MIN_SPEND_TO_FLAG && dayOfMonth >= MIN_DAY_OF_MONTH_TO_FLAG;
+
+  if (enoughDataToFlag) {
+    categories.forEach(c => {
+      const spent = ct[c.category] || 0;
+      if (spent < 500) return;
+      const actualPctThisMonth = monthTotal > 0 ? (spent / monthTotal) * 100 : 0;
+      const g = BUDGET_GUARDRAILS[c.category];
+      if (!g) return;
+      if (actualPctThisMonth > g.max) {
+        liveFlags.push(`You've spent ${actualPctThisMonth.toFixed(0)}% of this month's outgoings on ${c.label.replace(/^\S+\s/, '')} so far — above the healthy range (${g.min}–${g.max}%). Your target is ${c.targetPct}%.`);
+      }
+    });
+  } else if (monthTotal > 0) {
+    const daysLeft = Math.max(0, MIN_DAY_OF_MONTH_TO_FLAG - dayOfMonth);
+    if (daysLeft > 0) {
+      liveFlags.push(`Budget insights need a bit more data to be reliable — checking back in ${daysLeft} day${daysLeft === 1 ? '' : 's'} once more of the month has been logged.`);
+    }
+  }
+  const flagsHtml = liveFlags.length ? liveFlags.map(msg => `<div class="flag amber"><i class="ti ti-alert-triangle"></i><div>${msg}</div></div>`).join('') : '';
+
+  const perfHtml = categories.map(c => {
+    const amt = baseAmount * c.targetPct / 100;
+    const spent = ct[c.category] || 0;
+    const pct = amt > 0 ? Math.min(100, Math.round(spent / amt * 100)) : 0, rem = amt - spent;
+    const color = pct > 95 ? 'var(--danger)' : pct > 75 ? 'var(--amber)' : 'var(--emerald)';
+    return `<div class="budget-row"><div class="budget-label">${c.label}</div><div class="budget-bar-wrap"><div class="budget-fill-bar" style="width:${pct}%;background:${color}"></div></div><div class="budget-vals" style="line-height:1.5"><div>Spent: <strong style="color:var(--text)">${fmt(spent)}</strong></div><div style="font-size:10px">of ${fmt(amt)} target</div></div></div>`;
+  }).join('');
+
+  document.getElementById('budget-perf').innerHTML = flagsHtml + perfHtml;
+}
+
+/* ============================================
+   TITHE
+   ============================================ */
+async function renderTithe() {
+  const txns = await fetchTxns();
+  const incTxns = txns.filter(t => t.direction === 'in');
+  const totalIncome = incTxns.reduce((s, t) => s + t.amount, 0);
+  const titheDue = totalIncome * 0.10;
+  const tithePaid = txns.filter(t => t.category === 'Tithe').reduce((s, t) => s + t.amount, 0);
+  const offeringPaid = txns.filter(t => t.category === 'Offering' || t.category === 'Church/Fellowship').reduce((s, t) => s + t.amount, 0);
+  const pct = titheDue > 0 ? Math.min(100, Math.round(tithePaid / titheDue * 100)) : 0;
+
+  document.getElementById('tithe-due').textContent = fmt(titheDue);
+  document.getElementById('tithe-paid').textContent = fmt(tithePaid);
+  document.getElementById('tithe-paid').style.color = pct >= 100 ? 'var(--emerald)' : pct > 50 ? 'var(--amber)' : 'var(--danger)';
+  document.getElementById('tithe-status').textContent = pct >= 100 ? '✅ Fully paid' : pct > 0 ? pct + '% paid — ' + fmt(titheDue - tithePaid) + ' remaining' : 'Not paid yet';
+  document.getElementById('offering-paid').textContent = fmt(offeringPaid);
+  document.getElementById('total-giving').textContent = fmt(tithePaid + offeringPaid);
+
+  const bd = document.getElementById('tithe-breakdown');
+  if (!incTxns.length) { bd.innerHTML = '<div class="empty-state"><i class="ti ti-cash"></i>Log income to see tithe obligations.</div>'; }
+  else {
+    bd.innerHTML = `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Tithe paid vs due</span><span style="color:${pct >= 100 ? 'var(--emerald)' : 'var(--amber)'}">${pct}%</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--emerald),var(--teal))"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px"><span>Paid: <strong style="color:var(--text)">${fmt(tithePaid)}</strong></span><span>Due: <strong style="color:var(--text)">${fmt(titheDue)}</strong></span><span style="color:${titheDue - tithePaid > 0 ? 'var(--amber)' : 'var(--emerald)'}">${titheDue - tithePaid > 0 ? 'Left: ' + fmt(titheDue - tithePaid) : '✅ Fully paid'}</span></div></div>` +
+      incTxns.map(t => `<div class="tithe-bar"><div><div style="font-size:12px;font-weight:500">${t.category}</div><div style="font-size:10px;color:var(--muted)">${t.date}</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--emerald)">${fmt(t.amount)}</div><div style="font-size:11px;color:var(--amber)">Tithe: ${fmt(t.amount * 0.1)}</div></div></div>`).join('');
+  }
+
+  const gh = document.getElementById('giving-history');
+  const gt = txns.filter(t => ['Tithe', 'Offering', 'Church/Fellowship', 'Helping People', 'Family Support'].includes(t.category));
+  gh.innerHTML = gt.length ? gt.slice().reverse().map(t => `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:12.5px;font-weight:500">${t.category}</div><div style="font-size:10.5px;color:var(--muted)">${t.date}${t.note ? ' · ' + t.note : ''}</div></div><div style="font-size:13px;font-weight:700;color:var(--teal)">${fmt(t.amount)}</div></div>`).join('') : '<div class="empty-state"><i class="ti ti-heart"></i>No giving recorded yet.</div>';
+}
+
+/* ============================================
+   DEBT
+   ============================================ */
+async function addDebt() {
+  const lender = document.getElementById('d-lender').value.trim();
+  const balance = parseFloat(document.getElementById('d-balance').value) || 0;
+  if (!lender || !balance) { showToast('Enter lender and balance.', true); return; }
+  const debt = { lender, type: document.getElementById('d-type').value, balance, payment: parseFloat(document.getElementById('d-payment').value) || 0, rate: parseFloat(document.getElementById('d-rate').value) || 0, due: document.getElementById('d-due').value };
+  const ok = await insertDebt(debt);
+  if (!ok) return;
+  ['d-lender', 'd-balance', 'd-payment', 'd-rate'].forEach(id => document.getElementById(id).value = '');
+  showToast('Debt added!'); await renderDebt(); await renderDashboard();
+}
+
+async function deleteDebtUI(id) {
+  const ok = await deleteDebtRemote(id);
+  if (!ok) return;
+  await renderDebt(); await renderDashboard();
+}
+
+async function renderDebt() {
+  const debts = await fetchDebts();
+  const sal = await getSalary();
+  const salary = sal.amount || 0;
+  const total = debts.reduce((s, d) => s + d.balance, 0);
+  const monthlyInt = debts.reduce((s, d) => s + (d.balance * d.rate / 100), 0);
+  const dti = salary > 0 ? Math.round(total / salary * 100) : 0;
+
+  document.getElementById('debt-total').textContent = fmt(total);
+  document.getElementById('debt-interest').textContent = fmt(monthlyInt);
+  document.getElementById('debt-dti').textContent = dti + '%';
+  document.getElementById('debt-dti').style.color = dti > 35 ? 'var(--danger)' : dti > 20 ? 'var(--amber)' : 'var(--emerald)';
+  document.getElementById('debt-dti-sub').textContent = salary ? `${dti > 35 ? '⚠️ Above' : '✅ Below'} 35% threshold` : 'Set salary in Budget';
+
+  if (debts.length > 0 && debts[0].payment > 0) {
+    const d = debts[0], months = Math.ceil(d.balance / d.payment);
+    const payoffDate = new Date(); payoffDate.setMonth(payoffDate.getMonth() + months);
+    document.getElementById('debt-payoff').textContent = payoffDate.toLocaleString('en-KE', { month: 'short', year: 'numeric' });
+    document.getElementById('debt-payoff-sub').textContent = months + ' months at ' + fmt(d.payment) + '/mo';
+  }
+
+  const list = document.getElementById('debt-list');
+  list.innerHTML = debts.length ? debts.map(d => {
+    const months = d.payment > 0 ? Math.ceil(d.balance / d.payment) : null;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-size:13px;font-weight:700">${d.lender}</div><div style="font-size:11px;color:var(--muted)">${d.type} · ${d.rate}%/mo · Due: ${d.due || '—'}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:700;color:var(--danger)">${fmt(d.balance)}</div><button class="del-btn" onclick="deleteDebtUI(${d.id})"><i class="ti ti-trash"></i></button></div></div><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, d.payment / d.balance * 100)}%;background:var(--emerald)"></div></div><div style="font-size:11px;color:var(--muted);margin-top:3px">${fmt(d.payment)}/mo · ${months ? months + ' months to clear' : 'Set monthly payment'}</div></div>`;
+  }).join('') : '<div class="empty-state"><i class="ti ti-circle-check"></i>No debts. Add your loan above.</div>';
+
+  const cw = document.getElementById('debt-coach-wrap');
+  if (debts.length > 0) {
+    cw.style.display = 'block';
+    const d = debts[0];
+    document.getElementById('debt-coach').innerHTML = `<div class="flag amber"><i class="ti ti-bulb"></i><div>At ${d.rate}%/month your ${d.lender} loan costs <strong>${fmt(d.balance * d.rate / 100)}/month in interest</strong>. Clearing the full <strong>${fmt(d.balance)}</strong> saves you all future interest.</div></div>`;
+  } else cw.style.display = 'none';
+}
+
+/* ============================================
+   INVESTMENTS
+   ============================================ */
+async function addInvestment() {
+  const name = document.getElementById('inv-name').value.trim();
+  const invested = parseFloat(document.getElementById('inv-invested').value) || 0;
+  if (!name || !invested) { showToast('Enter name and amount.', true); return; }
+  const inv = { name, type: document.getElementById('inv-type').value, invested, value: parseFloat(document.getElementById('inv-value').value) || invested, rate: parseFloat(document.getElementById('inv-rate').value) || 0, dollars: parseFloat(document.getElementById('inv-dollars-in').value) || 0 };
+  const ok = await insertInvestment(inv);
+  if (!ok) return;
+  ['inv-name', 'inv-invested', 'inv-value', 'inv-rate', 'inv-dollars-in'].forEach(id => document.getElementById(id).value = '');
+  showToast('Investment added!'); await renderInvestments(); await renderDashboard();
+}
+
+async function deleteInvUI(id) {
+  const ok = await deleteInvRemote(id);
+  if (!ok) return;
+  await renderInvestments(); await renderDashboard();
+}
+
+async function renderInvestments() {
+  const invs = await fetchInvestments();
+  const total = invs.reduce((s, i) => s + i.value, 0);
+  const cost = invs.reduce((s, i) => s + i.invested, 0);
+  const pl = total - cost;
+  const dollars = invs.reduce((s, i) => s + (i.dollars || 0), 0);
+  const avgReturn = invs.length > 0 ? invs.reduce((s, i) => s + i.rate, 0) / invs.length : 0;
+
+  document.getElementById('inv-total').textContent = fmt(total);
+  document.getElementById('inv-pl').textContent = (pl >= 0 ? '+' : '') + fmt(pl);
+  document.getElementById('inv-pl').style.color = pl >= 0 ? 'var(--emerald)' : 'var(--danger)';
+  document.getElementById('inv-dollars').textContent = '$' + dollars.toFixed(2);
+  document.getElementById('inv-dollars-kes').textContent = '≈ ' + fmt(dollars * 130);
+  document.getElementById('inv-avg-return').textContent = avgReturn.toFixed(1) + '%';
+
+  const list = document.getElementById('inv-list');
+  list.innerHTML = invs.length ? invs.map(i => {
+    const p = i.value - i.invested;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:13px;font-weight:700">${i.name}</div><div style="font-size:11px;color:var(--muted)">${i.type} · ${i.rate}% p.a.${i.dollars ? ` · $${i.dollars}` : ''}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:700;color:var(--amber)">${fmt(i.value)}</div><div style="font-size:11px;color:${p >= 0 ? 'var(--emerald)' : 'var(--danger)'}">${p >= 0 ? '+' : ''}${fmt(p)}</div><button class="del-btn" onclick="deleteInvUI(${i.id})"><i class="ti ti-trash"></i></button></div></div></div>`;
+  }).join('') : '<div class="empty-state"><i class="ti ti-trending-up"></i>Add your investments above.</div>';
+}
+
+/* ============================================
+   EMERGENCY FUND
+   ============================================ */
+async function saveEM() {
+  const monthly = parseFloat(document.getElementById('em-monthly').value) || 0;
+  const saved = parseFloat(document.getElementById('em-saved').value) || 0;
+  const contrib = parseFloat(document.getElementById('em-contrib').value) || 0;
+  const ok = await upsertEmergency(monthly, saved, contrib);
+  if (!ok) return;
+  await renderEM(); await renderDashboard();
+}
+
+async function renderEM() {
+  const e = await fetchEmergency();
+  const monthly = e.monthly || 0, saved = e.saved || 0, contrib = e.contrib || 1;
+  if (e.monthly) document.getElementById('em-monthly').value = e.monthly;
+  if (e.saved !== undefined) document.getElementById('em-saved').value = e.saved;
+  if (e.contrib) document.getElementById('em-contrib').value = e.contrib;
+  if (!monthly) { document.getElementById('em-progress').innerHTML = '<div class="empty-state"><i class="ti ti-shield"></i>Enter your monthly expenses above.</div>'; return; }
+  const t3 = monthly * 3, t6 = monthly * 6;
+  const eta = t => { const rem = t - saved; if (rem <= 0) return '✅ Done!'; if (!contrib) return 'Set contribution'; return '~' + (rem / contrib).toFixed(1) + ' months'; };
+  const row = (label, t, color, pct) => `<div style="margin-bottom:1.25rem"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:600">${label}</span><span style="color:${color};font-weight:700">${pct}%</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;flex-wrap:wrap;gap:4px"><span>Saved: <strong style="color:var(--text)">${fmt(saved)}</strong></span><span>Target: <strong style="color:var(--text)">${fmt(t)}</strong></span><span>ETA: <strong style="color:var(--emerald)">${eta(t)}</strong></span></div></div>`;
+  document.getElementById('em-progress').innerHTML =
+    row('3-Month Fund', t3, 'linear-gradient(90deg,var(--blue),var(--teal))', Math.min(100, Math.round(saved / t3 * 100))) +
+    row('6-Month Fund', t6, 'linear-gradient(90deg,var(--indigo),var(--blue))', Math.min(100, Math.round(saved / t6 * 100))) +
+    `<div class="flag green"><i class="ti ti-robot"></i><div>${saved >= t3 ? 'Emergency fund complete! Redirect contribution into investments.' : saved > 0 ? `At ${fmt(contrib)}/month you will complete your 3-month fund in <strong>${eta(t3)}</strong>.` : 'Start with KES 1,000 this month.'}</div></div>`;
+}
+
+/* ============================================
+   FF CALCULATOR
+   ============================================ */
+let ffChart = null;
+function calcFF() {
+  const exp = parseFloat(document.getElementById('ff-exp').value) || 0;
+  const saved = parseFloat(document.getElementById('ff-saved').value) || 0;
+  const monthly = parseFloat(document.getElementById('ff-monthly').value) || 0;
+  const rr = (parseFloat(document.getElementById('ff-return').value) || 0) / 100;
+  if (!exp || !rr) return;
+  const target = exp * 12 * 25, r = rr / 12;
+  let months = 0, p = saved;
+  while (p < target && months < 1200) { p = p * (1 + r) + monthly; months++; }
+  const years = (months / 12).toFixed(1), yr = new Date().getFullYear() + Math.round(months / 12);
+  document.getElementById('ff-number').textContent = fmt(target);
+  document.getElementById('ff-years').textContent = years;
+  document.getElementById('ff-date').textContent = yr;
+  document.getElementById('ff-passive').textContent = fmt(target * rr / 12);
+
+  const el = document.getElementById('ffChart');
+  if (el) {
+    if (ffChart) { ffChart.destroy(); ffChart = null; }
+    const labels = [], data = [], tLine = []; let pp = saved;
+    for (let y = 0; y <= Math.min(40, Math.ceil(months / 12) + 5); y++) {
+      labels.push(new Date().getFullYear() + y + ''); data.push(Math.round(pp)); tLine.push(Math.round(target));
+      for (let m = 0; m < 12; m++) pp = pp * (1 + r) + monthly;
+    }
+    ffChart = new Chart(el, { type: 'line', data: { labels, datasets: [{ data, borderColor: '#00e5ff', backgroundColor: 'rgba(0,229,255,0.07)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 0 }, { data: tLine, borderColor: 'rgba(244,63,94,0.5)', borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6b87aa', font: { size: 9 } }, grid: { color: '#1e3557' }, maxTicksLimit: 8 }, y: { ticks: { color: '#6b87aa', font: { size: 9 }, callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'K' }, grid: { color: '#1e3557' } } } } });
+  }
+
+  const scenarios = [{ label: 'Invest KES 5,000/month', m: 5000 }, { label: 'Invest KES 10,000/month', m: 10000 }, { label: 'Invest KES 15,000/month', m: 15000 }, { label: 'Invest KES 20,000/month', m: 20000 }];
+  document.getElementById('ff-scenarios').innerHTML = scenarios.map(s => {
+    let sp = saved, sm = 0;
+    while (sp < target && sm < 1200) { sp = sp * (1 + r) + s.m; sm++; }
+    const sy = Math.round(sm / 12), syr = new Date().getFullYear() + sy, diff = Math.round(months / 12) - sy;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;color:var(--muted)">${s.label}</div><div style="text-align:right;flex-shrink:0"><div style="font-size:13px;font-weight:700;color:var(--teal)">${sy} years (${syr})</div>${diff > 0 ? `<div style="font-size:10px;color:var(--emerald)">−${diff} years earlier</div>` : ''}</div></div>`;
+  }).join('');
+}
+
+/* ============================================
+   HISTORY
+   ============================================ */
+async function renderHistory() {
+  const txns = await fetchTxns();
+  const byDate = {};
+  txns.forEach(t => { if (!byDate[t.date]) byDate[t.date] = []; byDate[t.date].push(t); });
+  const dates = Object.keys(byDate).sort().reverse();
+  const months = [...new Set(dates.map(d => d.substring(0, 7)))];
+  document.getElementById('month-tabs').innerHTML = months.map((m, i) => `<div class="month-tab ${i === 0 ? 'active' : ''}" onclick="filterHistoryMonth('${m}',this)">${new Date(m + '-01').toLocaleString('en-KE', { month: 'short', year: 'numeric' })}</div>`).join('');
+  if (months.length) await renderHistoryMonth(months[0]);
+  else document.getElementById('history-list').innerHTML = '<div class="empty-state"><i class="ti ti-history"></i>No transactions yet.</div>';
+}
+
+async function filterHistoryMonth(month, el) {
+  document.querySelectorAll('.month-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  await renderHistoryMonth(month);
+}
+
+async function renderHistoryMonth(month) {
+  const allTxns = await fetchTxns();
+  const txns = allTxns.filter(t => t.date && t.date.startsWith(month));
+  const list = document.getElementById('history-list');
+  if (!txns.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i>No transactions in this month.</div>'; return; }
+  const byDate = {};
+  txns.forEach(t => { if (!byDate[t.date]) byDate[t.date] = []; byDate[t.date].push(t); });
+  const dates = Object.keys(byDate).sort().reverse();
+  const cc = { 'Food & Drink': '#f43f5e', 'Transport': '#fbbf24', 'Housing/Rent': '#3d8bff', 'Helping People': '#f43f5e', 'Tithe': '#10f0a0', 'Offering': '#3d8bff', 'Loan Payment': '#f97316', 'Business Investment': '#10f0a0', 'Savings/Investment': '#10f0a0' };
+  list.innerHTML = dates.map(date => {
+    const dt = byDate[date];
+    const dayIn = dt.filter(t => t.direction === 'in').reduce((s, t) => s + t.amount, 0);
+    const dayOut = dt.filter(t => t.direction === 'out').reduce((s, t) => s + t.amount, 0);
+    return `<div class="card-lg" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:700">${formatDate(date)}</div><div style="font-size:12px"><span style="color:var(--emerald)">+${fmt(dayIn)}</span> <span style="color:var(--muted)">/</span> <span style="color:var(--danger)">-${fmt(dayOut)}</span></div></div>${[...dt].reverse().map(t => { const c = cc[t.category] || '#6b87aa'; const hb = t.helpingType ? `<span class="badge ${t.helpingType === 'couldnt-say-no' ? 'badge-red' : t.helpingType === 'unplanned' ? 'badge-amber' : 'badge-green'}" style="margin-left:3px">${t.helpingType === 'couldnt-say-no' ? '😬' : t.helpingType === 'unplanned' ? '⚠️' : '✅'}</span>` : ''; return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:6px"><div style="flex:1;min-width:0"><div style="font-size:12px"><span style="background:${c}22;color:${c};padding:1px 5px;border-radius:4px;font-size:11px">${t.category}</span>${hb}</div>${t.note ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px">${t.note}</div>` : ''}</div><div style="font-size:13px;font-weight:700;color:${t.direction === 'in' ? 'var(--emerald)' : 'var(--danger)'};flex-shrink:0">${t.direction === 'in' ? '+' : '-'}${fmt(t.amount)}</div></div>`; }).join('')}</div>`;
+  }).join('');
+}
+
+/* ============================================
+   CLEAR SECTIONS
+   ============================================ */
+async function clearSection(key) {
+  if (!confirm('Clear all ' + key + '? Cannot be undone.')) return;
+  const tableMap = { txns: 'transactions', debts: 'debts', investments: 'investments' };
+  const ok = await clearTable(tableMap[key]);
+  if (!ok) return;
+  showToast(key + ' cleared.');
+  await renderAll();
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+const RENDERS = { dashboard: renderDashboard, capture: renderCapture, budget: renderBudget, tithe: renderTithe, debt: renderDebt, invest: renderInvestments, emergency: renderEM, ff: calcFF, history: renderHistory, phase1: renderPhase1, 'unlock-celebration': async () => {} };
+
+async function nav(page) {
+  // Gate check: block access to Phase 2 pages if not unlocked
+  const gatedPages = ['dashboard', 'budget', 'tithe', 'debt', 'invest', 'emergency', 'ff'];
+  if (gatedPages.includes(page) && !isPhase2) {
+    document.getElementById('locked-days-done').textContent = (await getActiveDaysCount()) + ' days';
+    document.getElementById('locked-days-left').textContent = Math.max(0, 30 - (await getActiveDaysCount())) + ' days';
+    page = 'locked';
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  if (page === 'phase1') {
+    // Show capture form AND progress tracker together
+    document.getElementById('page-capture').classList.add('active');
+    document.getElementById('page-phase1-progress').classList.add('active');
+  } else {
+    const el = document.getElementById('page-' + page);
+    if (el) el.classList.add('active');
+  }
+
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const bnId = page === 'phase1' ? 'bn-phase1' : 'bn-' + page;
+  const bn = document.getElementById(bnId); if (bn) bn.classList.add('active');
+
+  if (page === 'phase1') {
+    await renderCapture();
+    await renderPhase1();
+  } else if (RENDERS[page]) {
+    await RENDERS[page]();
+  }
+  window.scrollTo(0, 0);
+}
+
+async function renderAll() {
+  await renderDashboard();
+  await renderCapture();
+  await renderBudget();
+  await renderTithe();
+  await renderDebt();
+  await renderInvestments();
+  await renderEM();
+  await renderHistory();
+}
+
+/* ============================================
+   BOOT
+   ============================================ */
+window.addEventListener('load', () => {
+  checkAuthState();
+});
+
+</script>
+</body>
+</html>
